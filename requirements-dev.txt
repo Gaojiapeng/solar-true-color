@@ -1,0 +1,4 @@
+# Optional numerical tests and 16-bit reference-image validation.
+# Blender rendering uses Blender's own Python and bundled NumPy.
+numpy>=1.24
+opencv-python>=4.8
