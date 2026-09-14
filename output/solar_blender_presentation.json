@@ -1,4 +1,15 @@
 {
+  "figure": {
+    "title": "True Color of the Sun",
+    "labels": [
+      "Core",
+      "Radiative zone",
+      "Convection zone",
+      "Tachocline",
+      "Photosphere",
+      "Corona"
+    ]
+  },
   "display_controls": {
     "compression": 10000000.0,
     "reference_luminance": 60000.0,
@@ -30,7 +41,7 @@
     ]
   },
   "comparison_scope": "Center / model photosphere; reference display luminance before emission boost, texture, corona, glare and highlight softening.",
-  "emission": "Sun materials emit 2.5 times the reference display RGB; comparison swatches retain gain 1.",
+  "emission": "Sun materials emit 2.5 times the reference display RGB; the reference image retains gain 1.",
   "texture": "Illustrative scalar granulation/plasma structure with gentle HMI contrast recovery; not a recovered physical 3D field.",
   "corona": "White, optically thin 3D emissive illustration with separately scaled brightness.",
   "glare": "Dedicated cut-face Fog Glow and faint streaks, gentler solar halo, then a soft HDR highlight shoulder; annotation sources excluded.",

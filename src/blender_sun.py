@@ -301,79 +301,49 @@ def guide_geometry(collection):
 
 def setup_camera(scene,data):
     right,up,toward=(Vector(data[k]) for k in ('right','up','toward'))
-    camera_data=bpy.data.cameras.new('Solar cutaway camera');camera_data.type='ORTHO';camera_data.ortho_scale=5.3
+    camera_data=bpy.data.cameras.new('Solar cutaway camera');camera_data.type='ORTHO';camera_data.ortho_scale=3.45
     camera=bpy.data.objects.new('Camera | annotated overview',camera_data);scene.collection.objects.link(camera)
-    target=right*.73
+    target=up*.12
     camera.location=target+toward*6.
     camera.rotation_euler=Matrix((right,up,toward)).transposed().to_euler()
     scene.camera=camera
     return right,up,toward,camera
 
 
-def typography(scene,axes,sources,data,group,comparison):
+def typography(scene,axes):
+    """Only the requested title and structure names appear in the figure."""
     right,up,toward,camera=axes
-    collection=bpy.data.collections.new('Annotations | hide for clean render');scene.collection.children.link(collection)
-    fg=emission_material('Type | white',(.73,.79,.88));muted=emission_material('Type | secondary',(.28,.36,.47))
-    accent=emission_material('Type | ice',(.37,.52,.75));warm=emission_material('Type | pink emission',(.60,.24,.34))
-    rot=Matrix((right,up,toward)).transposed().to_euler()
-    # Blender's built-in font travels with the scene on every platform.
-    font=None
-    def world(x,y,z=.01):return right*x+up*y+toward*z
-    def text(name,body,x,y,size=.040,mat=fg):
-        block=bpy.data.curves.new(name,'FONT');block.body=body;block.size=size*1.5;block.space_line=1.25
-        if font is not None:block.font=font
-        block.align_x='LEFT';block.resolution_u=8
+    collection=bpy.data.collections.new('Annotations | hide for clean render')
+    scene.collection.children.link(collection)
+    white=emission_material('Type | white',(.73,.79,.88))
+    ink=emission_material('Type | dark labels',(.013,.025,.043))
+    line=emission_material('Guide | name leaders',(.20,.28,.38))
+    rotation=Matrix((right,up,toward)).transposed().to_euler()
+    def world(x,y,z=2.01):return right*x+up*y+toward*z
+    def text(name,body,x,y,size,material=ink):
+        block=bpy.data.curves.new(name,'FONT')
+        block.body=body;block.size=size;block.space_line=1.10
+        block.align_x='CENTER';block.align_y='CENTER';block.resolution_u=8
         obj=bpy.data.objects.new(name,block);collection.objects.link(obj)
-        obj.location=world(x,y);obj.rotation_euler=rot;block.materials.append(mat)
+        obj.location=world(x,y);obj.rotation_euler=rotation
+        block.materials.append(material)
         return obj
-    text('Title','THE SUN',-1.55,1.50,.150)
-    text('Subtitle','LIGHT, TEXTURE & STRUCTURE',-1.55,1.37,.035,accent)
-    text('Octant','1/8 CUTAWAY',1.50,1.53,.062)
-    text('Scale note','Physical radii  |  luminous cut faces',1.50,1.44,.028,muted)
-    cards=[('01  CORE','0 - 0.25 solar radii','15.67 million K at the center',1.08),
-           ('02  RADIATIVE ZONE','0.25 - 0.713 solar radii','Energy carried by radiative diffusion',.84),
-           ('03  CONVECTION ZONE','0.713 - 1.0 solar radii','Heat transported by plasma motion',.60),
-           ('04  TACHOCLINE','Near 0.713 solar radii','Thin rotational shear region',.36),
-           ('05  PHOTOSPHERE','Near 1.0 solar radii','5,778 K  |  HMI + illustrative granulation',.12)]
-    for title,sub,detail,y in cards:
-        text(title,title,1.50,y,.050)
-        text(title+' range',sub,1.50,y-.063,.032,accent)
-        text(title+' note',detail,1.50,y-.116,.028,muted)
-    # Number markers are diagrams, never false layer hues in the Sun material.
-    points=[(0.,.10,.07),(0.,.43,.19),(0.,.79,.30),(.64,0.,.31),(-.30,.55,.7794)]
-    marker_mat=emission_material('Guide | label badges',(.012,.020,.033))
-    for n,p in enumerate(points,1):
-        vec=Vector(p);x,y=vec.dot(right),vec.dot(up)
-        # Place annotations in front of the sphere, so curved surfaces do not
-        # cut through the glyphs. Orthographic projection preserves anchors.
-        vertices=[world(x+.033*math.cos(a),y+.033*math.sin(a),2.)
-                  for a in np.linspace(0,2*math.pi,33)[:-1]]
-        mesh=bpy.data.meshes.new('Badge '+str(n));mesh.from_pydata(vertices,[],[list(range(32))]);mesh.update()
-        badge=bpy.data.objects.new('Layer badge '+str(n),mesh);collection.objects.link(badge);mesh.materials.append(marker_mat)
-        obj=text('Layer marker '+str(n),str(n),x-.012,y-.018,.046,fg)
-        obj.location=world(x-.012,y-.018,2.003)
-    text('Brightness heading','CORE / SURFACE BRIGHTNESS',1.50,-.24,.039,accent)
-    for label,x,source_rgb in [('CORE CENTER',1.77,data['rgb'][0]),('PHOTOSPHERE',2.53,data['rgb'][-1])]:
-        mat,tree,position,destination=radiance_material('Comparison | '+label,group)
-        fixed=tree.nodes.new('ShaderNodeCombineXYZ')
-        for i,value in enumerate(source_rgb):fixed.inputs[i].default_value=float(value)
-        tree.links.new(fixed.outputs[0],destination)
-        vertices=[world(x+.115*math.cos(a),-.46+.115*math.sin(a),2.)
-                  for a in np.linspace(0,2*math.pi,129)[:-1]]
-        mesh=bpy.data.meshes.new('Equal-area brightness swatch');mesh.from_pydata(vertices,[],[list(range(128))]);mesh.update()
-        obj=bpy.data.objects.new('Comparison swatch | '+label,mesh);collection.objects.link(obj);mesh.materials.append(mat)
-        text(label+' swatch',label,x-.205,-.665,.030,muted)
-    text('Intrinsic contrast','Modeled visible luminance: about 55,000 : 1',1.50,-.81,.035,fg)
-    text('Displayed contrast',f"Reference luminance: {comparison['displayed_ratio']:.2f} : 1",1.50,-.925,.048,accent)
-    text('Curve explanation','Log + gentle power scaling (0.60)',1.50,-1.01,.030,muted)
-    text('Swatch qualification','Equal-area swatches before emission boost, texture and glare.',1.50,-1.085,.026,muted)
-    text('Emission note','Sun illustration: 2.5x emission + cut-face optical glare.',1.50,-1.16,.029,accent)
-    text('Atmosphere heading','WHITE-LIGHT CORONA',1.50,-1.30,.035,accent)
-    text('Atmosphere caveat','Faint white streamers, enhanced gently for visibility.',1.50,-1.37,.029,muted)
-    text('Readme','Visible spectral color: Model S + CIE 1931. The interior is a hypothetical cutaway, with illustrative plasma texture.',-1.55,-1.53,.030,muted)
-    text('Source note','Emission is boosted for display. Glare and highlight softening produce pale blue-white light; spectral source data is retained.',-1.55,-1.605,.028,muted)
-    curve('Scale line',[world(-1.18,-1.285),world(-.68,-1.285)],muted,collection,.001)
-    text('Scale','0.5 solar radius',-1.09,-1.35,.028,muted)
+    text('Title','True Color of the Sun',0.,1.51,.155,white)
+    text('Structure | Core','Core',.095,.062,.064)
+    text('Structure | Radiative zone','Radiative\nzone',.35,.35,.068)
+    text('Structure | Convection zone','Convection\nzone',1.18,.66,.075,white)
+    text('Structure | Tachocline','Tachocline',-.66,.21,.066)
+    text('Structure | Photosphere','Photosphere',-.45,-.59,.076)
+    text('Structure | Corona','Corona',-1.05,.95,.080,white)
+    # Short leaders clarify the thin shear boundary and the two outer labels.
+    # No badges, scales, legends, comparison swatches, or explanatory notes.
+    for name,points in (
+        ('Tachocline',[(-.46,.19),(-.37,.19),(-.270,.116)]),
+        ('Convection zone',[(1.00,.65),(.89,.65),(.66,.48)]),
+        ('Corona',[(-1.05,.885),(-1.05,.82),(-.96,.79)]),
+    ):
+        curve('Structure leader | '+name,[world(x,y,2.) for x,y in points],
+              line,collection,.0011)
     return collection
 
 
@@ -392,7 +362,7 @@ glare_strength.
 Every solar material uses the same driven log + power node group. The default
 power of 0.60 gently scales contrast beyond logarithmic compression: the
 center/model-photosphere ratio is about 55,000:1 in visible thermal radiance
-and about 1.98:1 in reference display luminance (swatches before effects).
+and about 1.98:1 in reference display luminance (recorded in the metadata before effects).
 The source brightness is visible spectral radiance, NOT bolometric T^4 power.
 
 The Sun illustration has 2.5x emission after the reference curve. Blender's
@@ -400,7 +370,7 @@ compositor uses a separate cut-face material pass for stronger Fog Glow and
 faint streaks, with gentler glow from the photosphere. A highlight shoulder
 softens HDR luminance and reduces out-of-gamut highlight saturation toward
 pale blue-white. The illustrated highlights therefore differ from the
-unaltered spectral chromaticity in the reference swatches.
+unaltered spectral chromaticity in the reference image.
 
 Texture is illustrative scalar detail, preserving local RGB proportions.
 Surface detail also gently recovers HMI contrast suppressed by the global
@@ -488,7 +458,7 @@ def main():
         except Exception as error:
             if args.device=='GPU':raise RuntimeError('Requested OptiX GPU is unavailable; use --device CPU or AUTO') from error
             print('GPU unavailable; using CPU:',error)
-    scene.render.resolution_x=args.resolution;scene.render.resolution_y=round(args.resolution*2/3)
+    scene.render.resolution_x=args.resolution;scene.render.resolution_y=args.resolution
     scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';scene.render.image_settings.color_mode='RGBA';scene.render.image_settings.color_depth='16'
     scene.render.film_transparent=False
@@ -502,7 +472,7 @@ def main():
         ('surface_texture',.14,(0.,.4),'Illustrative granulation and restrained HMI contrast recovery; zero retains only shared-curve HMI intensity.'),
         ('interior_texture',.04,(0.,.15),'Illustrative plasma grain; convection receives three times this amplitude.'),
         ('corona_strength',.025,(0.,.10),'Separately scaled illustrative white-light corona.'),
-        ('solar_emission_gain',2.5,(1.,10.),'Sun emission after the reference curve; HDR light seeds cut-face glare. Swatches retain gain 1.'),
+        ('solar_emission_gain',2.5,(1.,10.),'Sun emission after the reference curve; HDR light seeds cut-face glare. The reference image retains gain 1.'),
         ('glare_strength',.35,(0.,1.),'Cut-face optical glare with a softer solar halo; zero disables added glare.')):
         controller[prop]=value;controller.id_properties_ui(prop).update(min=bounds[0],max=bounds[1],description=description)
     controller.empty_display_type='PLAIN_AXES';controller.empty_display_size=.2;controller.hide_render=True
@@ -510,10 +480,11 @@ def main():
     from src.blender_corona import create_corona
     from src.blender_glare import setup_glare
     comparison=brightness_comparison(data['rgb'][0],data['rgb'][-1])
-    presentation={'display_controls':{key:controller[key] for key in controller.keys()},
+    presentation={'figure':{'title':'True Color of the Sun','labels':['Core','Radiative zone','Convection zone','Tachocline','Photosphere','Corona']},
+                  'display_controls':{key:controller[key] for key in controller.keys()},
                   'brightness_comparison':comparison,
                   'comparison_scope':'Center / model photosphere; reference display luminance before emission boost, texture, corona, glare and highlight softening.',
-                  'emission':'Sun materials emit 2.5 times the reference display RGB; comparison swatches retain gain 1.',
+                  'emission':'Sun materials emit 2.5 times the reference display RGB; the reference image retains gain 1.',
                   'texture':'Illustrative scalar granulation/plasma structure with gentle HMI contrast recovery; not a recovered physical 3D field.',
                   'corona':'White, optically thin 3D emissive illustration with separately scaled brightness.',
                   'glare':'Dedicated cut-face Fog Glow and faint streaks, gentler solar halo, then a soft HDR highlight shoulder; annotation sources excluded.',
@@ -527,7 +498,7 @@ def main():
     solar_mesh(thermal_material(data,group,controller),photosphere_material(data,group,controller))
     corona=create_corona(scene,controller,data)
     guides=bpy.data.collections.new('Layer guides | annotations');scene.collection.children.link(guides);guide_geometry(guides)
-    axes=setup_camera(scene,data);annotation=typography(scene,axes,sources,data,group,comparison)
+    axes=setup_camera(scene,data);annotation=typography(scene,axes)
     setup_glare(scene,controller)
     write_readme(sources)
     bpy.ops.file.pack_all()

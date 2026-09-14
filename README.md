@@ -1,6 +1,6 @@
 # Blender Sun cutaway
 
-An editable, self-contained Blender visualization of the Sun with one octant removed. The three exposed cut faces reveal the core, radiative zone and convection zone; the surface includes an observed HMI continuum texture, illustrative granulation, a white corona and compositor glare.
+An editable, self-contained Blender visualization titled **True Color of the Sun**, showing the Sun with one octant removed and only its structure names. The three exposed cut faces reveal the core, radiative zone and convection zone; the surface includes an observed HMI continuum texture, illustrative granulation, a white corona and compositor glare.
 
 ![Annotated Sun cutaway](output/solar_blender_annotated_preview.png)
 
@@ -73,7 +73,7 @@ Full-resolution PNGs, rendering caches and Blender backup files are ignored by G
 
 Interior colors come from visible Planck spectra evaluated using CIE 1931 color matching functions and converted to linear sRGB. The temperature profile comes from Model S. The retained geometry is exactly seven eighths of a sphere, with the core boundary at 0.25 solar radii and the convection-zone base at 0.713 solar radii.
 
-The prepared model's center-to-photosphere visible-luminance ratio is approximately **54,947:1**. A shared logarithmic curve followed by a power of **0.60** compresses the reference display ratio to **1.98:1**. The equal-area comparison swatches show this reference mapping. The illustrated Sun then receives **2.5× emission**, texture, corona and compositor glare, so its final pixels are not measurements of that reference ratio.
+The prepared model's center-to-photosphere visible-luminance ratio is approximately **54,947:1**. A shared logarithmic curve followed by a power of **0.60** compresses the reference display ratio to **1.98:1**. The numerical reference mapping is recorded in `output/solar_blender_presentation.json`; the figure shows only the title and structure names. The illustrated Sun then receives **2.5× emission**, texture, corona and compositor glare, so its final pixels are not measurements of that reference ratio.
 
 The surface observation is a relative HMI continuum proxy, not an absolute broadband calibration. Interior texture, surface granulation, corona density and glare are illustrative. The corona is enhanced separately for visibility. This hypothetical cutaway explains structure and relative brightness; it is not a direct observation of the solar interior. See [`assets/README.md`](assets/README.md) and [`assets/solar_blender_sources.json`](assets/solar_blender_sources.json) for provenance and source hashes.
 
