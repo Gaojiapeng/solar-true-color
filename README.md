@@ -96,7 +96,3 @@ python -m venv .venv
 ```
 
 Render at the default 2400-pixel resolution before the reference-image check so it has enough cut-face samples. That check compares the effects-free reference image with the spectral display calculation; it does not test the artistic glare render against physical radiance.
-
-## Publish to GitHub
-
-Follow [`GITHUB.md`](GITHUB.md) to create the first commit and push this independent folder to a new GitHub repository.
